@@ -1,0 +1,22 @@
+/.gradle/
+/.kotlin/
+/.idea/
+/*.iml
+/**/build/
+/**/.cxx/
+/releases/
+/local.properties
+/secrets.properties
+*.keystore
+*.jks
+__pycache__/
+*.pyc
+
+# 原生预编译件（只开源源码，构建时自行生成或从 Release 提取）
+/core/engine/src/main/jniLibs/
+/rootpayload/build/root-native/
+/app/sharedTestOutput/
+
+# 本地签名与密钥
+/debug.keystore
+/toolchain/
