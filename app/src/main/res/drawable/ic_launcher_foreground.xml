@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 前景：一条描边的定位针 + 正中一点强调色 + 针下一条落地弧线。只用两个颜色，保持克制。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 定位针（描边，圆角接头） -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,77C46.5,68.5 36,57.5 36,45a18,18 0,1 1,36 0c0,12.5 -10.5,23.5 -18,32z" />
+    <!-- 针心强调点 -->
+    <path
+        android:fillColor="#FF7CE3FF"
+        android:pathData="M54,45m-7,0a7,7 0,1 0,14 0a7,7 0,1 0,-14 0z" />
+    <!-- 落地弧线（暗示轨迹/步频） -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#66FFFFFF"
+        android:strokeWidth="3.5"
+        android:strokeLineCap="round"
+        android:pathData="M41,85a13,4 0,0 0,26 0" />
+</vector>

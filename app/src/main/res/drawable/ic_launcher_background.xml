@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 图标背景：深海军蓝到蓝的中性渐变，避免花哨，突出前景单色图形。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="18"
+                android:startY="8"
+                android:endX="96"
+                android:endY="104"
+                android:startColor="#FF12203A"
+                android:endColor="#FF1E4C8A" />
+        </aapt:attr>
+    </path>
+</vector>
