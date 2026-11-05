@@ -64,8 +64,8 @@ android {
         applicationId = "com.geostep.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 40
-        versionName = "0.8.3"
+        versionCode = 41
+        versionName = "0.8.4"
         ndk { abiFilters += appAbis }
         buildConfigField("String", "AMAP_API_KEY", "\"$amapApiKey\"")
         manifestPlaceholders["AMAP_API_KEY"] = amapApiKey

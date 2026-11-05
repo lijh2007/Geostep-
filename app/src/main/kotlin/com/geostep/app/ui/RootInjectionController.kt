@@ -2,10 +2,12 @@ package com.geostep.app.ui
 
 import com.geostep.core.data.prefs.SettingsRepository
 import com.geostep.core.engine.EngineRouter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 /**
  * Root 模式的「应用注入」状态机。
@@ -40,7 +42,7 @@ internal class RootInjectionController(
         }
         if (_state.value.busy) return
         _state.value = RootInjectState(busy = true, message = "正在注入 $target …")
-        val result = router.injectRootSensors(target)
+        val result = withContext(Dispatchers.IO) { router.injectRootSensors(target) }
         if (result.isFailure) {
             _state.value = RootInjectState(
                 ok = false,
@@ -64,7 +66,7 @@ internal class RootInjectionController(
         val failed = mutableListOf<String>()
         val targets = packagesToInject(packages, _injected.value)
         for (target in targets) {
-            val result = router.injectRootSensors(target)
+            val result = withContext(Dispatchers.IO) { router.injectRootSensors(target) }
             if (result.isFailure) failed += target else _injected.value = _injected.value + target
         }
         _state.value = if (failed.isEmpty()) {

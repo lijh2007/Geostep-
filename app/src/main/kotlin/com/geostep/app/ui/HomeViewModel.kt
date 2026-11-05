@@ -302,7 +302,7 @@ class HomeViewModel(
                 val remembered = runCatching { settingsRepo.settings.first().rootInjectedPackages }
                     .getOrDefault(emptySet())
                 // 先登记目标包，再补注入：引擎会在运行期间持续扫描这些包的新进程。
-                rootInjector.startSession(remembered)
+                withContext(Dispatchers.IO) { rootInjector.startSession(remembered) }
             }
             while (true) {
                 val running = sim.value.engineState as? EngineState.Running ?: break

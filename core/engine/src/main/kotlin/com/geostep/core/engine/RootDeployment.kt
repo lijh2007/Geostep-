@@ -80,7 +80,7 @@ class RootDeployment(private val context: Context, private val suPath: suspend (
      * 把载荷注入目标 App 进程：Root 模式默认只接管 system_server，App 进程内的传感器必须单独注入。
      * 失败一律返回 Result.failure，由界面提示可操作原因。
      */
-    suspend fun injectClient(packageName: String): Result<Int> = runCatching {
+    suspend fun injectClient(packageName: String): Result<Int> = withContext(Dispatchers.IO) { runCatching {
         require(packageName.matches(PACKAGE)) { "包名格式不对：$packageName" }
         val shell = shell()
         val pids = processesOf(shell, packageName)
@@ -94,7 +94,7 @@ class RootDeployment(private val context: Context, private val suPath: suspend (
         }
         check(done > 0) { "注入后没在 $packageName 的任何进程里找到钩子库" }
         done
-    }
+    } }
 
     /**
      * 目标包当前所有 64 位进程。高德会把定位放在 `:locationservice` 子进程里，
@@ -115,12 +115,12 @@ class RootDeployment(private val context: Context, private val suPath: suspend (
     }
 
     /** 用常驻 su 会话查询目标包的 64 位进程。 */
-    internal suspend fun processesOf(packageName: String): List<Int> = runCatching {
-        processesOf(shell(), packageName)
-    }.getOrDefault(emptyList())
+    internal suspend fun processesOf(packageName: String): List<Int> = withContext(Dispatchers.IO) {
+        runCatching { processesOf(shell(), packageName) }.getOrDefault(emptyList())
+    }
 
     internal suspend fun injectProcess(pid: Int, packageName: String): Boolean =
-        injectProcess(shell(), pid, packageName)
+        withContext(Dispatchers.IO) { injectProcess(shell(), pid, packageName) }
 
     /** 注入单个进程；ptrace 偶发超时，重试两次再判失败。 */
     internal suspend fun injectProcess(shell: SuCommandRunner, pid: Int, packageName: String): Boolean {
@@ -221,49 +221,55 @@ class RootDeployment(private val context: Context, private val suPath: suspend (
      * 否则模块会把它当成「上次开机写入的过期状态」直接丢弃。
      * su 会话的首条命令偶尔读不到值，所以这里失败时回退到应用自己读同一个设置。
      */
-    suspend fun bootCount(): Int {
+    suspend fun bootCount(): Int = withContext(Dispatchers.IO) {
         val fromShell = runCatching {
             shell().run("settings get global boot_count").trim().toIntOrNull()
         }.getOrNull()
-        if (fromShell != null && fromShell >= 0) return fromShell
+        if (fromShell != null && fromShell >= 0) return@withContext fromShell
         val fallback = runCatching {
             android.provider.Settings.Global.getInt(context.contentResolver, android.provider.Settings.Global.BOOT_COUNT, -1)
         }.getOrDefault(-1)
-        if (fallback >= 0) return fallback
-        return runCatching {
+        if (fallback >= 0) return@withContext fallback
+        runCatching {
             shell().run("cmd settings get global boot_count").trim().toIntOrNull()
         }.getOrNull()?.takeIf { it >= 0 } ?: -1
     }
 
     /** 把当前模拟参数写进 Settings.Global，供已注入的目标进程读取。 */
     suspend fun publishState(cfg: SimConfig, session: Long, bootCount: Int): Result<Unit> =
-        runCatching { RootStatePublisher.publish(shell(), cfg, session, bootCount).getOrThrow() }
+        withContext(Dispatchers.IO) {
+            runCatching { RootStatePublisher.publish(shell(), cfg, session, bootCount).getOrThrow() }
+        }
 
-    suspend fun clearState(): Result<Unit> = runCatching { RootStatePublisher.clear(shell()).getOrThrow() }
+    suspend fun clearState(): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching { RootStatePublisher.clear(shell()).getOrThrow() }
+    }
 
     /**
      * 让系统把本应用当作"模拟位置应用"：有些 App 的进程注入不进去（ptrace 超时），
      * 这时用系统级模拟位置兜底，任何进程都能读到假位置。
      */
-    suspend fun allowMockLocation(packageName: String): Result<Unit> = runCatching {
+    suspend fun allowMockLocation(packageName: String): Result<Unit> = withContext(Dispatchers.IO) { runCatching {
         val shell = shell()
         shell.run("appops set $packageName android:mock_location allow || true")
         shell.run("settings put secure mock_location $packageName || true")
         require(shell.run("settings get secure mock_location").trim() == packageName) {
             "系统没有记录模拟位置应用"
         }
-    }
+    } }
 
     /** 读回当前的系统状态镜像，用于验证「App 写的状态」确实落到了系统设置里。 */
-    suspend fun readState(): JSONObject? = runCatching {
-        val raw = shell().run("settings get global ${ControlPlane.GLOBAL_STATE_KEY}").trim()
-        if (raw.isEmpty() || raw == "null") null else JSONObject(raw)
-    }.getOrNull()
+    suspend fun readState(): JSONObject? = withContext(Dispatchers.IO) {
+        runCatching {
+            val raw = shell().run("settings get global ${ControlPlane.GLOBAL_STATE_KEY}").trim()
+            if (raw.isEmpty() || raw == "null") null else JSONObject(raw)
+        }.getOrNull()
+    }
 
     /** 目标进程里是否仍然映射着我们的钩子库（注入是否还有效）。 */
-    suspend fun injected(packageName: String): Boolean = runCatching {
-        mapped(shell(), mainProcess(shell(), packageName), ".geostep_")
-    }.getOrDefault(false)
+    suspend fun injected(packageName: String): Boolean = withContext(Dispatchers.IO) {
+        runCatching { mapped(shell(), mainProcess(shell(), packageName), ".geostep_") }.getOrDefault(false)
+    }
 
     private fun mapped(shell: SuCommandRunner, pid: Int, marker: String = "mockgeo_root"): Boolean =
         shell.run("awk 'BEGIN{f=0} /$marker/ {f=1} END{print f}' /proc/$pid/maps").trim() == "1"
